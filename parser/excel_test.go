@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"testing"
 )
@@ -14,5 +15,10 @@ func TestConvertToFuncCases(t *testing.T) {
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
-	t.Log(funcCases)
+
+	jsonBytes, err := json.Marshal(funcCases)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
+	}
+	t.Log(string(jsonBytes))
 }

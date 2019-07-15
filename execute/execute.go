@@ -2,6 +2,7 @@ package execute
 
 import (
 	"fmt"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -49,18 +50,18 @@ func MakeACase(lastStep, nextSetp *models.CaseStep) *models.CaseStep {
 
 		Result: nil,
 	}
-	url := nextSetp.URL
+	addr := nextSetp.URL
 	data := nextSetp.Data
 	keys := make([]string, 0)
-	keys = append(keys, GetKeysByString(url)...)
+	keys = append(keys, GetKeysByString(addr)...)
 	keys = append(keys, GetKeysByString(data)...)
 
 	vals := GetValuesByBody(keys, string(lastStep.Result.Body))
 	for k, v := range vals {
-		url = strings.Replace(url, fmt.Sprintf("{{%s}}", k), v, -1)
+		addr = strings.Replace(addr, fmt.Sprintf("{{%s}}", k), v, -1)
 		data = strings.Replace(data, fmt.Sprintf("{{%s}}", k), v, -1)
 	}
-	caseStep.URL = url
+	caseStep.URL = addr
 	caseStep.Data = data
 
 	return caseStep
@@ -74,20 +75,26 @@ func RunSteps(caseStep *models.CaseStep) (caseOutput *models.CaseOutput) {
 	var res *httpclient.Response
 	var err error
 
-	url := caseStep.URL
+	addr := caseStep.URL
 	data := caseStep.Data
 
 	switch strings.ToUpper(caseStep.Method) {
 	case "GET":
-		res, err = httpclient.Get(url)
+		res, err = httpclient.Get(addr)
 	case "POST":
-		res, err = httpclient.Post(url, data)
+		values, err := url.ParseQuery(data)
+		if err != nil {
+			caseOutput.Success = false
+			caseOutput.Error = err
+			return
+		}
+		res, err = httpclient.Post(addr, values)
 	case "POSTJSON":
-		res, err = httpclient.PostJson(url, data)
+		res, err = httpclient.PostJson(addr, data)
 	case "PUTJSON":
-		res, err = httpclient.PutJson(url, data)
+		res, err = httpclient.PutJson(addr, data)
 	case "DELETE":
-		res, err = httpclient.Delete(url)
+		res, err = httpclient.Delete(addr)
 	default:
 		caseOutput.Success = false
 		caseOutput.Error = fmt.Errorf("Can not support this method [%s]", caseStep.Method)

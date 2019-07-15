@@ -41,6 +41,9 @@ func parseSheet(name string, rows [][]string) (*models.FuncCase, error) {
 	var last *models.TestCase
 	for _, v := range rows {
 		if v[0] != "" {
+			if last != nil {
+				funcCase.Cases = append(funcCase.Cases, last)
+			}
 			last = &models.TestCase{
 				Name:  v[0],
 				Steps: make([]*models.CaseStep, 0),
@@ -52,6 +55,7 @@ func parseSheet(name string, rows [][]string) (*models.FuncCase, error) {
 		}
 		last.Steps = append(last.Steps, caseStep)
 	}
+	funcCase.Cases = append(funcCase.Cases, last)
 
 	return funcCase, nil
 }
