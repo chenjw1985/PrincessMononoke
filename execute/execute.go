@@ -2,6 +2,7 @@ package execute
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -30,9 +31,11 @@ func RunTestCase(testCase *models.TestCase) error {
 		} else {
 			caseOutput = RunSteps(MakeACase(testCase.Steps[k-1], v))
 		}
+		log.Printf("Run case [%s] step [%d:%s] ==> %t\n", testCase.Name, k, v.Name, caseOutput.Success)
 		if caseOutput.Success == false {
 			return caseOutput.Error
 		}
+
 		v.Result = caseOutput
 	}
 	return nil
@@ -77,6 +80,8 @@ func RunSteps(caseStep *models.CaseStep) (caseOutput *models.CaseOutput) {
 
 	addr := caseStep.URL
 	data := caseStep.Data
+
+	caseOutput = new(models.CaseOutput)
 
 	switch strings.ToUpper(caseStep.Method) {
 	case "GET":

@@ -22,7 +22,7 @@ func ConvertToFuncCases(byteData []byte) ([]*models.FuncCase, error) {
 		if err != nil {
 			return nil, err
 		}
-		funcCase, err := parseSheet(v, rows)
+		funcCase, err := parseSheet(v, rows[1:])
 		if err != nil {
 			return nil, err
 		}
