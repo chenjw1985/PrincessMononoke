@@ -32,13 +32,15 @@ func (e *Executer) RunFuncCase(funcCase *models.FuncCase) error {
 func (e *Executer) RunTestCase(testCase *models.TestCase) error {
 	var caseOutput *models.CaseOutput
 	e.Total++
+	var acase *models.CaseStep
 	for k, v := range testCase.Steps {
 		if k == 0 {
-			caseOutput = e.RunSteps(v)
+			acase = v
 		} else {
-			caseOutput = e.RunSteps(e.MakeACase(testCase.Steps[k-1], v))
+			acase = e.MakeACase(testCase.Steps[k-1], v)
 		}
-		log.Printf("Run case [%s] step [%d:%s] ==> %t\n", testCase.Name, k, v.Name, caseOutput.Success)
+		caseOutput = e.RunSteps(acase)
+		log.Printf("Run case [%s] step [%d:%s] ==> %t, Verfication: %s\n", testCase.Name, k, acase.Name, caseOutput.Success, acase.Verfication)
 		if caseOutput.Success == false {
 			e.Failed++
 			return caseOutput.Error
@@ -63,17 +65,21 @@ func (e *Executer) MakeACase(lastStep, nextSetp *models.CaseStep) *models.CaseSt
 	}
 	addr := nextSetp.URL
 	data := nextSetp.Data
+	vfdata := nextSetp.Verfication
 	keys := make([]string, 0)
 	keys = append(keys, GetKeysByString(addr)...)
 	keys = append(keys, GetKeysByString(data)...)
+	keys = append(keys, GetKeysByString(vfdata)...)
 
 	vals := GetValuesByBody(keys, string(lastStep.Result.Body))
 	for k, v := range vals {
 		addr = strings.Replace(addr, fmt.Sprintf("{{%s}}", k), v, -1)
 		data = strings.Replace(data, fmt.Sprintf("{{%s}}", k), v, -1)
+		vfdata = strings.Replace(vfdata, fmt.Sprintf("{{%s}}", k), v, -1)
 	}
 	caseStep.URL = addr
 	caseStep.Data = data
+	caseStep.Verfication = vfdata
 
 	return caseStep
 }
