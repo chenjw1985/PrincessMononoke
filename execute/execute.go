@@ -13,9 +13,15 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-func RunFuncCase(funcCase *models.FuncCase) error {
+type Executer struct {
+	Total   int
+	Success int
+	Failed  int
+}
+
+func (e *Executer) RunFuncCase(funcCase *models.FuncCase) error {
 	for _, v := range funcCase.Cases {
-		err := RunTestCase(v)
+		err := e.RunTestCase(v)
 		if err != nil {
 			return err
 		}
@@ -23,25 +29,27 @@ func RunFuncCase(funcCase *models.FuncCase) error {
 	return nil
 }
 
-func RunTestCase(testCase *models.TestCase) error {
+func (e *Executer) RunTestCase(testCase *models.TestCase) error {
 	var caseOutput *models.CaseOutput
+	e.Total++
 	for k, v := range testCase.Steps {
 		if k == 0 {
-			caseOutput = RunSteps(v)
+			caseOutput = e.RunSteps(v)
 		} else {
-			caseOutput = RunSteps(MakeACase(testCase.Steps[k-1], v))
+			caseOutput = e.RunSteps(e.MakeACase(testCase.Steps[k-1], v))
 		}
 		log.Printf("Run case [%s] step [%d:%s] ==> %t\n", testCase.Name, k, v.Name, caseOutput.Success)
 		if caseOutput.Success == false {
+			e.Failed++
 			return caseOutput.Error
 		}
-
 		v.Result = caseOutput
 	}
+	e.Success++
 	return nil
 }
 
-func MakeACase(lastStep, nextSetp *models.CaseStep) *models.CaseStep {
+func (e *Executer) MakeACase(lastStep, nextSetp *models.CaseStep) *models.CaseStep {
 	caseStep := &models.CaseStep{
 		Name:        nextSetp.Name,
 		Level:       nextSetp.Level,
@@ -70,7 +78,7 @@ func MakeACase(lastStep, nextSetp *models.CaseStep) *models.CaseStep {
 	return caseStep
 }
 
-func RunSteps(caseStep *models.CaseStep) (caseOutput *models.CaseOutput) {
+func (e *Executer) RunSteps(caseStep *models.CaseStep) (caseOutput *models.CaseOutput) {
 	httpclient.Defaults(httpclient.Map{
 		httpclient.OPT_USERAGENT: "unit test httpclient",
 		"Accept-Language":        "en-us",
