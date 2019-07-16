@@ -68,7 +68,8 @@ func TestMakeACase(t *testing.T) {
 
 		Result: nil,
 	}
-	caseStep := MakeACase(lastStep, nextSetp)
+	executer := new(Executer)
+	caseStep := executer.MakeACase(lastStep, nextSetp)
 
 	url := nextSetp.URL
 	data := nextSetp.Data
